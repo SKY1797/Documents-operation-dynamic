@@ -1,0 +1,132 @@
+:root {
+    --primary-color: #2c3e50;
+    --secondary-color: #34495e;
+    --highlight: #3498db;
+    --bg-color: #f8f9fa;
+    --card-bg: #ffffff;
+    --text-color: #333333;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    margin: 0;
+    padding: 0;
+}
+
+header {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 25px;
+    text-align: center;
+}
+
+main {
+    max-width: 1200px;
+    margin: 30px auto;
+    padding: 0 20px;
+}
+
+.category-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.category-btn {
+    background-color: var(--card-bg);
+    border: 2px solid var(--secondary-color);
+    color: var(--secondary-color);
+    padding: 15px;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.category-btn:hover {
+    background-color: var(--secondary-color);
+    color: white;
+}
+
+.lmi-btn {
+    border-color: var(--highlight);
+    color: var(--highlight);
+}
+
+.lmi-btn:hover {
+    background-color: var(--highlight);
+    color: white;
+}
+
+.reset-btn {
+    background-color: #95a5a6;
+    border-color: #95a5a6;
+    color: white;
+}
+
+.reset-btn:hover {
+    background-color: #7f8c8d;
+}
+
+.search-section {
+    margin-bottom: 30px;
+}
+
+#searchInput {
+    width: 100%;
+    padding: 15px;
+    font-size: 1.1rem;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    box-sizing: border-box;
+}
+
+.document-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.doc-card {
+    background-color: var(--card-bg);
+    padding: 20px;
+    border-radius: 8px;
+    border-top: 4px solid var(--highlight);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.folder-badge {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    color: #7f8c8d;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.doc-card h3 {
+    margin: 0 0 15px 0;
+    font-size: 1.1rem;
+    word-break: break-word;
+}
+
+.view-btn {
+    display: block;
+    padding: 12px;
+    background-color: var(--highlight);
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.view-btn:hover {
+    background-color: #2980b9;
+}
