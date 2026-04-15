@@ -1,4 +1,4 @@
-// PASTE YOUR NEW GOOGLE APPS SCRIPT WEB APP URL HERE
+// PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE. IT MUST END IN /exec
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyjH8cLS0UVOXfRLKw7iOxaKttsO2O32KlRrwSmacGdSH3T_zLUy-MHuUlFWznBX5QF/exec';
 
 let allDocuments = []; 
@@ -6,17 +6,30 @@ let allDocuments = [];
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         const response = await fetch(SCRIPT_URL);
-        allDocuments = await response.json();
+        
+        // Fetch the raw text first to see if Google intercepted the request
+        const rawText = await response.text();
+        
+        try {
+            // Try to parse it as JSON
+            allDocuments = JSON.parse(rawText);
+        } catch (parseError) {
+            // If it fails, Google sent an HTML error or login page instead of JSON
+            document.getElementById('loadingMessage').innerHTML = 
+                "<strong>Connection Error:</strong> Apps Script returned an HTML page instead of data. <br><br>1. Check that your SCRIPT_URL ends in <strong>/exec</strong>.<br>2. Ensure 'Who has access' is set to <strong>Anyone</strong>.";
+            console.error("Raw response received:", rawText);
+            return;
+        }
         
         if (allDocuments.error) {
-            document.getElementById('loadingMessage').innerText = "Error: Check your Folder ID and Permissions.";
+            document.getElementById('loadingMessage').innerText = "Script Error: " + allDocuments.error;
             return;
         }
 
         document.getElementById('loadingMessage').style.display = 'none';
         displayDocuments(allDocuments);
     } catch (error) {
-        document.getElementById('loadingMessage').innerText = "Failed to load documents.";
+        document.getElementById('loadingMessage').innerText = "Network Error: Could not connect to Google Apps Script.";
         console.error("Fetch error:", error);
     }
 });
@@ -46,7 +59,6 @@ function displayDocuments(docs) {
     });
 }
 
-// Filters by looking at the folder name instead of the file name
 function filterDocs(folderName) {
     if (folderName === 'all') {
         displayDocuments(allDocuments);
@@ -60,7 +72,6 @@ function filterDocs(folderName) {
     displayDocuments(filteredDocs);
 }
 
-// Live Search Bar searches the actual file names
 document.getElementById('searchInput').addEventListener('input', (e) => {
     const searchTerm = e.target.value.toLowerCase();
     const filteredDocs = allDocuments.filter(doc => 
