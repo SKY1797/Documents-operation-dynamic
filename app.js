@@ -1,5 +1,5 @@
 // PASTE YOUR NEW GOOGLE APPS SCRIPT WEB APP URL HERE
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyGMJk9VR95X_ypQXBwnYZcRuAaTVvQy7vAojTP5rQ1E7xOsdFfTj0_Q8TM7Xu6497_/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyjH8cLS0UVOXfRLKw7iOxaKttsO2O32KlRrwSmacGdSH3T_zLUy-MHuUlFWznBX5QF/exec';
 
 let allDocuments = []; 
 
