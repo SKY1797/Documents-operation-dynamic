@@ -1,82 +1,211 @@
 // PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE. IT MUST END IN /exec
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyjH8cLS0UVOXfRLKw7iOxaKttsO2O32KlRrwSmacGdSH3T_zLUy-MHuUlFWznBX5QF/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwihfjnqOQdiBEoD3D-8RCBAM60sa0hXaQbn_0tZM_mVXrofR7XGXvmegxcDkQ4AQgh/exec';
 
-let allDocuments = []; 
+let allDocuments = [];
+let currentPath = [];
+
+const navIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>';
+const searchIcon = '<svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
+
+function formatName(filename) {
+    return filename.replace(/\.[^/.]+$/, "");
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
+    const appContainer = document.getElementById('app-container');
+    appContainer.innerHTML = '<p style="text-align:center; padding: 3rem; color: var(--text-muted); font-weight: 500;">Scanning Google Drive hierarchy...</p>';
+
     try {
         const response = await fetch(SCRIPT_URL);
-        
-        // Fetch the raw text first to see if Google intercepted the request
         const rawText = await response.text();
-        
+
         try {
-            // Try to parse it as JSON
             allDocuments = JSON.parse(rawText);
-        } catch (parseError) {
-            // If it fails, Google sent an HTML error or login page instead of JSON
-            document.getElementById('loadingMessage').innerHTML = 
-                "<strong>Connection Error:</strong> Apps Script returned an HTML page instead of data. <br><br>1. Check that your SCRIPT_URL ends in <strong>/exec</strong>.<br>2. Ensure 'Who has access' is set to <strong>Anyone</strong>.";
-            console.error("Raw response received:", rawText);
-            return;
-        }
-        
-        if (allDocuments.error) {
-            document.getElementById('loadingMessage').innerText = "Script Error: " + allDocuments.error;
+        } catch (e) {
+            appContainer.innerHTML = `<div style="text-align:center; color:#E8632B; padding:2rem;"><strong>Connection Error:</strong> Check URL and Permissions.</div>`;
             return;
         }
 
-        document.getElementById('loadingMessage').style.display = 'none';
-        displayDocuments(allDocuments);
+        if (allDocuments.error) {
+            appContainer.innerHTML = `<div style="text-align:center; color:#E8632B; padding:2rem;">Script Error: ${allDocuments.error}</div>`;
+            return;
+        }
+
+        renderView();
     } catch (error) {
-        document.getElementById('loadingMessage').innerText = "Network Error: Could not connect to Google Apps Script.";
-        console.error("Fetch error:", error);
+        appContainer.innerHTML = `<div style="text-align:center; color:#E8632B; padding:2rem;">Network Error. Check connection.</div>`;
     }
 });
 
-function displayDocuments(docs) {
-    const listContainer = document.getElementById('documentList');
-    listContainer.innerHTML = ''; 
+function renderView() {
+    const appContainer = document.getElementById('app-container');
+    const mainHeader = document.getElementById('main-header');
+    const mainDivider = document.getElementById('main-divider');
 
-    if (docs.length === 0) {
-        listContainer.innerHTML = '<p>No documents found matching this criteria.</p>';
-        return;
-    }
+    if (currentPath.length === 0) {
+        // TIER 1: HOME (Root Folders)
+        mainHeader.style.display = 'block';
+        mainDivider.style.display = 'block';
 
-    docs.forEach(doc => {
-        const previewUrl = `https://drive.google.com/file/d/${doc.id}/preview`;
-        
-        const card = `
-            <div class="doc-card">
-                <div>
-                    <span class="folder-badge">${doc.parentFolder}</span>
-                    <h3>${doc.name}</h3>
+        let html = `
+            <div class="view-container">
+                <div class="section-header">
+                    <h2 class="section-title">Select Folder</h2>
+                    <div class="search-wrapper">
+                        ${searchIcon}
+                        <input type="text" id="global-search" placeholder="Search across all documents..." autocomplete="off">
+                        <div id="search-results" class="search-results"></div>
+                    </div>
                 </div>
-                <a href="${previewUrl}" class="view-btn" target="_blank">View PDF</a>
+                <hr class="section-divider">
+                <div class="item-grid" id="folderGrid"></div>
             </div>
         `;
-        listContainer.innerHTML += card;
+        appContainer.innerHTML = html;
+        setupSearch();
+
+        const folderGrid = document.getElementById('folderGrid');
+        const rootFolders = new Set();
+
+        allDocuments.forEach(doc => {
+            if (doc.path.length > 0) rootFolders.add(doc.path[0]);
+        });
+
+        // Unified Card Rendering
+        [...rootFolders].sort().forEach((folderName, i) => {
+            let themeClass = 'card-theme-glow-' + (i % 4);
+
+            folderGrid.innerHTML += `
+                <div class="item-card ${themeClass}" onclick="navigateTo('${folderName}')">
+                    <div class="item-title">${folderName}</div>
+                </div>
+            `;
+        });
+
+    } else {
+        // TIER 2+: SUBFOLDERS AND DOCUMENTS
+        mainHeader.style.display = 'none';
+        mainDivider.style.display = 'none';
+
+        let currentFolderName = currentPath[currentPath.length - 1];
+
+        let backName = "Home";
+        if (currentPath.length > 1) {
+            backName = currentPath[currentPath.length - 2];
+        }
+
+        let html = `
+            <div class="view-container">
+                <div class="view-header">
+                    <h2 class="view-title">${currentFolderName}</h2>
+                    <button class="btn-back" onclick="goBack()">
+                        ${navIcon} Back to ${backName}
+                    </button>
+                </div>
+                <div class="item-grid" id="contentGrid"></div>
+            </div>
+        `;
+        appContainer.innerHTML = html;
+
+        const contentGrid = document.getElementById('contentGrid');
+        const currentPathStr = currentPath.join('/');
+        const subfolders = new Set();
+
+        allDocuments.forEach(doc => {
+            const docPathStr = doc.path.join('/');
+            if (docPathStr.startsWith(currentPathStr + '/') && doc.path.length > currentPath.length) {
+                subfolders.add(doc.path[currentPath.length]);
+            }
+        });
+
+        let cardCounter = 0;
+
+        // Unified Subfolder Rendering
+        [...subfolders].sort().forEach(folderName => {
+            let themeClass = 'card-theme-glow-' + (cardCounter % 4);
+            contentGrid.innerHTML += `
+                <div class="item-card ${themeClass}" onclick="navigateTo('${folderName}')">
+                    <div class="item-title">${folderName}</div>
+                </div>
+            `;
+            cardCounter++;
+        });
+
+        // Unified File Rendering
+        const filesHere = allDocuments.filter(doc => doc.path.join('/') === currentPathStr);
+        filesHere.forEach(doc => {
+            const previewUrl = `https://drive.google.com/file/d/${doc.id}/preview`;
+            let themeClass = 'card-theme-glow-' + (cardCounter % 4);
+
+            contentGrid.innerHTML += `
+                <div class="item-card ${themeClass}" onclick="window.open('${previewUrl}', '_blank')">
+                    <div class="item-title">${formatName(doc.name)}</div>
+                </div>
+            `;
+            cardCounter++;
+        });
+
+        if (subfolders.size === 0 && filesHere.length === 0) {
+            contentGrid.innerHTML = '<p style="color: var(--text-muted); padding: 1rem;">This folder is empty.</p>';
+        }
+    }
+}
+
+function navigateTo(folderName) {
+    currentPath.push(folderName);
+    renderView();
+}
+
+function goBack() {
+    currentPath.pop();
+    renderView();
+}
+
+function setupSearch() {
+    const searchInput = document.getElementById('global-search');
+    const searchResults = document.getElementById('search-results');
+    if (!searchInput || !searchResults) return;
+
+    searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        searchResults.innerHTML = '';
+
+        if (query.length < 2) {
+            searchResults.style.display = 'none';
+            return;
+        }
+
+        const matches = allDocuments.filter(doc =>
+            formatName(doc.name).toLowerCase().includes(query)
+        );
+
+        if (matches.length > 0) {
+            matches.slice(0, 10).forEach(match => {
+                const docPath = match.path.length > 0 ? match.path.join(' / ') : 'Home';
+                const previewUrl = `https://drive.google.com/file/d/${match.id}/preview`;
+                const div = document.createElement('div');
+                div.className = 'search-result-item';
+                div.innerHTML = `
+                    <div class="sr-equip">${formatName(match.name)}</div>
+                    <div class="sr-area">Located in: ${docPath}</div>
+                `;
+                div.onclick = () => {
+                    window.open(previewUrl, '_blank');
+                    searchInput.value = '';
+                    searchResults.style.display = 'none';
+                };
+                searchResults.appendChild(div);
+            });
+            searchResults.style.display = 'block';
+        } else {
+            searchResults.innerHTML = '<div class="search-result-empty">No matching documents found.</div>';
+            searchResults.style.display = 'block';
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+            searchResults.style.display = 'none';
+        }
     });
 }
-
-function filterDocs(folderName) {
-    if (folderName === 'all') {
-        displayDocuments(allDocuments);
-        return;
-    }
-
-    const searchTerm = folderName.toLowerCase();
-    const filteredDocs = allDocuments.filter(doc => 
-        doc.parentFolder.toLowerCase().includes(searchTerm)
-    );
-    displayDocuments(filteredDocs);
-}
-
-document.getElementById('searchInput').addEventListener('input', (e) => {
-    const searchTerm = e.target.value.toLowerCase();
-    const filteredDocs = allDocuments.filter(doc => 
-        doc.name.toLowerCase().includes(searchTerm) || 
-        doc.parentFolder.toLowerCase().includes(searchTerm)
-    );
-    displayDocuments(filteredDocs);
-});
