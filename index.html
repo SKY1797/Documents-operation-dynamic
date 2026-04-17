@@ -1,36 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Operation Documents Portal</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-    <header>
-        <h1>Operation Documents Portal</h1>
-        <p>Access Schematic Diagrams and LMIs</p>
+    <header class="app-header" id="main-header">
+        <div class="header-content">
+            <div class="title-container">
+                <h1>Operation Documents Portal</h1>
+                <p class="subtitle">Schematic Diagrams and LMIs</p>
+            </div>
+        </div>
     </header>
 
-    <main>
-        <section class="category-grid">
-            <button class="category-btn" onclick="filterDocs('turbine')">Turbine Diagrams</button>
-            <button class="category-btn" onclick="filterDocs('boiler')">Boiler Diagrams</button>
-            <button class="category-btn" onclick="filterDocs('offsite')">Offsite Diagrams</button>
-            <button class="category-btn" onclick="filterDocs('electrical')">Electrical Diagrams</button>
-            <button class="category-btn lmi-btn" onclick="filterDocs('Operation LMI')">Operation LMIs</button>
-            <button class="category-btn reset-btn" onclick="filterDocs('all')">View All</button>
-        </section>
+    <hr class="section-divider" id="main-divider" style="max-width: 1200px; margin: 0 auto;">
 
-        <section class="search-section">
-            <input type="text" id="searchInput" placeholder="Search by document name...">
-        </section>
-
-        <section class="document-list" id="documentList">
-            <p id="loadingMessage">Scanning Google Drive folders...</p>
-        </section>
+    <main id="app-container">
     </main>
 
     <script src="app.js"></script>
 </body>
+
 </html>
