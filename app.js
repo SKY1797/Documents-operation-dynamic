@@ -136,10 +136,11 @@ function renderView() {
         filesHere.forEach(doc => {
             const previewUrl = `https://drive.google.com/file/d/${doc.id}/preview`;
             let themeClass = 'card-theme-glow-' + (cardCounter % 4);
+            const cleanName = formatName(doc.name);
 
             contentGrid.innerHTML += `
-                <div class="item-card ${themeClass}" onclick="window.open('${previewUrl}', '_blank')">
-                    <div class="item-title">${formatName(doc.name)}</div>
+                <div class="item-card ${themeClass}" onclick="openDocument('${previewUrl}', '${cleanName}')">
+                    <div class="item-title">${cleanName}</div>
                 </div>
             `;
             cardCounter++;
@@ -183,14 +184,16 @@ function setupSearch() {
             matches.slice(0, 10).forEach(match => {
                 const docPath = match.path.length > 0 ? match.path.join(' / ') : 'Home';
                 const previewUrl = `https://drive.google.com/file/d/${match.id}/preview`;
+                const cleanName = formatName(match.name);
+
                 const div = document.createElement('div');
                 div.className = 'search-result-item';
                 div.innerHTML = `
-                    <div class="sr-equip">${formatName(match.name)}</div>
+                    <div class="sr-equip">${cleanName}</div>
                     <div class="sr-area">Located in: ${docPath}</div>
                 `;
                 div.onclick = () => {
-                    window.open(previewUrl, '_blank');
+                    openDocument(previewUrl, cleanName);
                     searchInput.value = '';
                     searchResults.style.display = 'none';
                 };
@@ -208,4 +211,28 @@ function setupSearch() {
             searchResults.style.display = 'none';
         }
     });
+}
+
+// --- Universal Modal Functions ---
+
+function openDocument(url, title) {
+    const modal = document.getElementById('docModal');
+    const viewer = document.getElementById('docViewer');
+    const mTitle = document.getElementById('modalTitle');
+
+    if (!modal || !viewer || !mTitle) {
+        alert("Error: Modal elements missing in HTML. Please add the <div id='docModal'> block to index.html");
+        return;
+    }
+
+    mTitle.innerText = title;
+    viewer.src = url;
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeDocument() {
+    document.getElementById('docModal').style.display = 'none';
+    document.getElementById('docViewer').src = '';
+    document.body.style.overflow = 'auto';
 }
