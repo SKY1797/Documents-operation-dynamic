@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ops-portal-v2';
+const CACHE_NAME = 'ops-portal-v3';
 
 const urlsToCache = [
   './',
@@ -33,23 +33,16 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
 
-  // UNIVERSAL STALE-WHILE-REVALIDATE STRATEGY
-  // This serves EVERYTHING (UI and Google Data) instantly from the cache, 
-  // then fetches the newest version in the background for the next time.
+  // IMPORTANT: Ignore the Google Apps Script URL entirely! 
+  // Let app.js handle that via localStorage.
+  if (event.request.url.includes('script.google.com')) {
+      return; 
+  }
+
+  // Standard Cache-First strategy for UI files (HTML, CSS, JS)
   event.respondWith(
     caches.match(event.request).then(cachedResponse => {
-      const fetchPromise = fetch(event.request).then(networkResponse => {
-        caches.open(CACHE_NAME).then(cache => {
-            // Only cache valid responses
-            if (networkResponse.ok || networkResponse.type === 'opaque') {
-                cache.put(event.request, networkResponse.clone());
-            }
-        });
-        return networkResponse;
-      }).catch(() => null); // Fail silently if offline
-
-      // Return the instant cached version if we have it, otherwise wait for the network
-      return cachedResponse || fetchPromise;
+      return cachedResponse || fetch(event.request);
     })
   );
 });
