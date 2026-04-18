@@ -13,27 +13,51 @@ function formatName(filename) {
 
 document.addEventListener('DOMContentLoaded', async () => {
     const appContainer = document.getElementById('app-container');
-    appContainer.innerHTML = '<p style="text-align:center; padding: 3rem; color: var(--text-muted); font-weight: 500;">Scanning Google Drive hierarchy...</p>';
 
+    // 1. CHECK FOR INSTANT CACHED DATA
+    const cachedData = localStorage.getItem('opsPortalData');
+    if (cachedData) {
+        try {
+            allDocuments = JSON.parse(cachedData);
+            // Render the UI instantly using old data!
+            renderView(); 
+        } catch (e) {
+            console.error("Cache parsing error", e);
+        }
+    } else {
+        // Only show this loading screen if it's their very first time opening the app
+        appContainer.innerHTML = '<p style="text-align:center; padding: 3rem; color: var(--text-muted); font-weight: 500;">Scanning Google Drive hierarchy...</p>';
+    }
+
+    // 2. FETCH FRESH DATA IN THE BACKGROUND
     try {
         const response = await fetch(SCRIPT_URL);
         const rawText = await response.text();
-
+        
         try {
-            allDocuments = JSON.parse(rawText);
-        } catch (e) {
-            appContainer.innerHTML = `<div style="text-align:center; color:#E8632B; padding:2rem;"><strong>Connection Error:</strong> Check URL and Permissions.</div>`;
-            return;
+            const freshData = JSON.parse(rawText);
+            
+            if (freshData.error) {
+                if (!cachedData) appContainer.innerHTML = `<div style="text-align:center; color:#E8632B; padding:2rem;">Script Error: ${freshData.error}</div>`;
+                return;
+            }
+
+            // 3. SAVE THE FRESH DATA FOR NEXT TIME
+            localStorage.setItem('opsPortalData', rawText);
+            
+            // 4. UPDATE THE UI (Silently adds any newly uploaded PDFs)
+            allDocuments = freshData;
+            renderView();
+
+        } catch (parseError) {
+            if (!cachedData) appContainer.innerHTML = `<div style="text-align:center; color:#E8632B; padding:2rem;"><strong>Connection Error:</strong> Apps Script returned HTML instead of JSON. Check URL.</div>`;
         }
 
-        if (allDocuments.error) {
-            appContainer.innerHTML = `<div style="text-align:center; color:#E8632B; padding:2rem;">Script Error: ${allDocuments.error}</div>`;
-            return;
-        }
-
-        renderView();
     } catch (error) {
-        appContainer.innerHTML = `<div style="text-align:center; color:#E8632B; padding:2rem;">Network Error. Check connection.</div>`;
+        console.error("Network fetch failed.", error);
+        if (!cachedData) {
+            appContainer.innerHTML = `<div style="text-align:center; color:#E8632B; padding:2rem;">Network Error. Check connection.</div>`;
+        }
     }
 });
 
