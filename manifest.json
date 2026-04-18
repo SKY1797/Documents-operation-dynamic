@@ -1,0 +1,9 @@
+{
+    "name": "Operation Documents Portal",
+    "short_name": "Ops Portal",
+    "start_url": "./index.html",
+    "display": "standalone",
+    "background_color": "#F9F7F7",
+    "theme_color": "#1A1D26",
+    "orientation": "portrait"
+}
