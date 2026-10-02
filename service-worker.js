@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ops-portal-v4';
+const CACHE_NAME = 'ops-portal-v001';
 
 const urlsToCache = [
   './',
