@@ -74,7 +74,7 @@ function renderView() {
         let html = `
             <div class="view-container">
                 <div class="section-header">
-                    <h2 class="section-title">Select Folder</h2>
+                    <h2 class="section-title">Select Folder (or)</h2>
                     <div class="search-wrapper">
                         ${searchIcon}
                         <input type="text" id="global-search" placeholder="Search across all documents..." autocomplete="off">
